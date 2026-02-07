@@ -1,6 +1,6 @@
 {
   "name": "@xxanderwp/jstoolkit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Swiss Army knife of useful JavaScript/TypeScript utilities for everyday development",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

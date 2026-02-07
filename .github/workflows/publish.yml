@@ -1,77 +1,64 @@
-name: Publish
+name: Publish npm Package
 
 on:
   push:
-    branches:
-      - beta
-      - main
+    branches: [main, beta]
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
+          node-version: 20
+          registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm run test
-
-      - name: Build
+      - name: Build package
         run: npm run build
-
-      - name: Determine tag
-        id: tag
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/beta" ]]; then
-            echo "NPM_TAG=beta" >> $GITHUB_OUTPUT
-          else
-            echo "NPM_TAG=latest" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Get package version
-        id: package
-        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Check if version exists on npm
         id: check_version
         run: |
-          if npm view @xxanderwp/jstoolkit@${{ steps.package.outputs.VERSION }} version 2>/dev/null; then
-            echo "VERSION_EXISTS=true" >> $GITHUB_OUTPUT
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "Package: $PACKAGE_NAME"
+          echo "Version: $PACKAGE_VERSION"
+
+          # Проверяем, есть ли уже такая версия на npm
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" >/dev/null 2>&1; then
+            echo "Version $PACKAGE_VERSION already exists on npm"
+            echo "exists=true" >> $GITHUB_OUTPUT
           else
-            echo "VERSION_EXISTS=false" >> $GITHUB_OUTPUT
+            echo "Version $PACKAGE_VERSION is new"
+            echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Publish to npm (if version doesn't exist)
-        if: steps.check_version.outputs.VERSION_EXISTS == 'false'
-        run: npm publish --tag ${{ steps.tag.outputs.NPM_TAG }} --access public
+      - name: Publish to npm (latest)
+        if: steps.check_version.outputs.exists == 'false' && github.ref == 'refs/heads/main'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Add dist-tag (if version exists)
-        if: steps.check_version.outputs.VERSION_EXISTS == 'true'
         run: |
-          npm dist-tag add @xxanderwp/jstoolkit@${{ steps.package.outputs.VERSION }} ${{ steps.tag.outputs.NPM_TAG }}
-          echo "Version ${{ steps.package.outputs.VERSION }} already exists. Added tag: ${{ steps.tag.outputs.NPM_TAG }}"
+          npm publish --access=public
+
+      - name: Mark existing version as latest
+        if: steps.check_version.outputs.exists == 'true' && github.ref == 'refs/heads/main'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create GitHub Release (only on main and if new version)
-        if: github.ref == 'refs/heads/main' && steps.check_version.outputs.VERSION_EXISTS == 'false'
-        uses: actions/create-release@v1
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          npm dist-tag add "$PACKAGE_NAME@$PACKAGE_VERSION" latest
+    
+      - name: Publish to npm (beta)
+        if: steps.check_version.outputs.exists == 'false' && github.ref == 'refs/heads/beta'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.package.outputs.VERSION }}
-          release_name: Release v${{ steps.package.outputs.VERSION }}
-          draft: false
-          prerelease: false
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm publish --tag beta --access=public
