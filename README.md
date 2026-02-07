@@ -1,8 +1,9 @@
 # @xxanderwp/jstoolkit
 
-![npm version](https://img.shields.io/npm/v/@xxanderwp/jstoolkit)
-![license](https://img.shields.io/npm/l/@xxanderwp/jstoolkit)
-![build](https://github.com/xxanderwp/jstoolkit/workflows/CI/badge.svg)
+[![npm version](https://img.shields.io/npm/v/@xxanderwp/jstoolkit.svg)](https://www.npmjs.com/package/@xxanderwp/jstoolkit)
+![NPM Downloads](https://img.shields.io/npm/dm/%40xxanderwp%2Fjstoolkit)
+[![Tests](https://github.com/xxanderwp/jstoolkit/workflows/CI/badge.svg)](https://github.com/XXanderWP/JsToolkit/actions)
+[![license](https://img.shields.io/github/license/XXanderWP/JsToolkit.svg)](https://github.com/XXanderWP/JsToolkit/blob/main/LICENSE)
 
 A comprehensive Swiss Army knife of JavaScript/TypeScript utilities for everyday development. Clean, tested, and tree-shakeable.
 
